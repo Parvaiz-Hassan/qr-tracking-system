@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-// GET /api/batch/{slug} — public product lookup by QR slug.
-// This is the endpoint a future mobile app would call too, so keep the
-// response shape stable once you're past the demo stage.
+// GET /api/batch/{slug} — raw product/batch lookup by QR slug, for
+// future clients (e.g. a mobile app) that want the data without going
+// through the name+phone verify gate. Does NOT log a scan or apply the
+// scan-limit block — that logic lives in /api/verify/[slug], which is
+// what the public web verify page actually uses.
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -13,8 +15,10 @@ export async function GET(
   const { data, error } = await supabaseAdmin
     .from("batches")
     .select(
-      `id, company_id, batch_number, manufacturing_date, expiry_date, quantity, quantity_unit,
-       products ( name, category, uses, instructions, image_url )`
+      `batch_number, label_number, manufacturing_date, expiry_date, date_of_testing,
+       net_weight, mrp, usp,
+       products ( name, variety, category, uses, instructions, image_url ),
+       batch_attributes ( section, label, value, sort_order )`
     )
     .eq("qr_slug", slug)
     .single();
@@ -22,15 +26,6 @@ export async function GET(
   if (error || !data) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
-
-  // Fire-and-forget scan log — don't block the response on this.
-  supabaseAdmin
-    .from("scan_requests")
-    .insert({
-      batch_id: (data as any).id,
-      company_id: (data as any).company_id,
-    })
-    .then(() => {});
 
   return NextResponse.json(data);
 }

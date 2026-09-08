@@ -1,64 +1,77 @@
 # Product QR Tracking — Demo
 
-Scan a QR code on a product bag/pouch → see product & batch details on a
-web page. Built so the same backend can later power a mobile app and
-WhatsApp delivery without a rewrite.
+Scan a QR code on a product bag/pouch -> name+phone verify gate -> see
+product & batch details (quality/traceability info) on a styled result
+page. Built so the same backend can later power a mobile app and WhatsApp
+delivery without a rewrite.
 
 ## What's included
 
-- `/admin` — add a product + batch, get its QR code, download it for printing
-- `/p/[slug]` — public page a customer sees after scanning (no login needed)
-- `/api/batch/[slug]` — the same data as JSON — this is what a future mobile
-  app will call
-- `schema.sql` — the database schema (multi-tenant, ready for more clients later)
+- `/admin` — add a product + batch (with photo, quality/test fields), get
+  its QR code, download it for printing; dashboard shows scan count per batch
+- `/p/[slug]` — customer-facing flow: enter name + phone -> Verify -> see
+  full product details. Blocked automatically after 3 successful verifications
+  for the same QR code (anti-duplication safeguard)
+- `/api/verify/[slug]` — the endpoint the public page actually calls: logs
+  the scan (name, phone, hashed IP, best-effort location) and enforces the
+  scan limit
+- `/api/batch/[slug]` — raw data lookup by slug, no gate — this is what a
+  future mobile app should call instead
+- `/api/upload` — uploads a product photo to Supabase Storage
+- `schema.sql` — full database schema (run this for a brand new project)
+- `migration_2.sql` — same changes, but safe to run on top of an EXISTING
+  project that already had the original schema (adds the new columns/tables
+  without touching what's there)
 
-## 1. Set up Supabase (free, ~5 minutes, no domain needed)
+## 1. If you already set up Supabase before (schema.sql v1)
 
-1. Create a free account at https://supabase.com and a new project.
-2. In the Supabase dashboard, go to **SQL Editor** -> paste the contents of
-   `schema.sql` -> run it.
-3. Still in SQL Editor, create your first company row:
-   ```sql
-   insert into companies (name, slug) values ('JP Agro Innovations', 'jp-agro')
-   returning id;
-   ```
-   Copy the returned `id`.
-4. Go to **Settings -> API** and copy: Project URL, `anon` public key,
-   `service_role` key.
-5. Copy `.env.local.example` to `.env.local` and fill in all four values
-   (including the company id from step 3 as `DEMO_COMPANY_ID`).
+Just run `migration_2.sql` in the SQL Editor — it only adds new things,
+nothing is deleted or overwritten.
 
-## 2. Run it locally
+**Then create a Storage bucket** (new requirement, for product photos):
+1. In Supabase, go to **Storage** (left sidebar) -> **New bucket**
+2. Name it exactly: `product-images`
+3. Toggle **Public bucket: ON**
+4. Create
+
+That's it — no new env vars needed, the app uses the same service role key.
+
+## 2. If this is a brand new Supabase project
+
+Follow the original steps: run `schema.sql` (now includes everything),
+create the `companies` row, create the `product-images` storage bucket
+(step 1 above), copy your keys into `.env.local`.
+
+## 3. Run locally
 
 ```bash
 npm install
 npm run dev
 ```
-Open http://localhost:3000/admin, add a product batch, and you'll see a QR
-code appear. Scanning it with your phone will only work once it's deployed
-(step 3) — on localhost, just click the link under the QR to preview the
-verify page instead.
 
-## 3. Deploy for the client demo (free, no domain required)
+## 4. Deploy
 
-1. Push this folder to a GitHub repo.
-2. Go to https://vercel.com -> **New Project** -> import the repo.
-3. Add the same four environment variables from `.env.local` in Vercel's
-   project settings.
-4. Deploy. You'll get a free URL like `your-project.vercel.app` —
-   fully public, so QR codes will scan correctly on any phone.
+Same as before — push to GitHub, import into Vercel, add the same env vars,
+deploy. See git history / prior instructions if you need the detailed
+click-by-click steps again.
 
-## What's next (after the demo)
+## How the scan limit works
 
-- **Mobile app**: build it against `/api/batch/[slug]` — the response shape
-  is already the contract for it, no backend changes needed.
-- **WhatsApp**: the verify page already has a (disabled) WhatsApp input
-  field as a placeholder. To wire it up: add a `/api/whatsapp-send` route
-  that calls the WhatsApp Cloud API (or a reseller like AiSensy/Interakt),
-  and enable the button.
-- **Admin auth**: right now `/admin` has no login (fine for a demo). Before
-  real use, add Supabase Auth and swap `DEMO_COMPANY_ID` for a real lookup
-  from the logged-in user — the `company_users` table in `schema.sql`
-  already supports this.
-- **Custom domain**: once ready, point your own domain at the Vercel
-  project — this doesn't require changing any application code.
+Every time someone submits the name+phone form on `/p/[slug]` and it
+succeeds, that counts as one verification. On the 4th attempt for the same
+QR code, the page shows a "scanned multiple times" message instead of the
+product details. The admin dashboard shows each batch's scan count and
+flags any that have hit the limit.
+
+## What's next (after this demo)
+
+- **Mobile app**: build it against `/api/batch/[slug]`.
+- **WhatsApp**: not wired in yet at this stage — can be added as a
+  `/api/whatsapp-send` route later, using the name+phone already captured
+  at the verify gate.
+- **Admin auth**: `/admin` still has no login — fine for a demo, add
+  Supabase Auth before real use (schema already supports it via
+  `company_users`).
+- **Real-time location gate**: currently location is requested silently
+  in the background and never blocks the flow, by design (agreed for this
+  phase) — revisit if the future mobile app needs to enforce it.
