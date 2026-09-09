@@ -278,17 +278,17 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
         </div>
 
         {/* Product summary */}
-        <div className="bg-white border border-neutral-200 rounded-2xl p-3 flex items-start gap-3 mb-3">
+        <div className="bg-white border border-neutral-200 rounded-2xl p-4 flex items-center gap-5 mb-3">
           {product?.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
-              className="w-[72px] h-[100px] rounded-lg object-cover border border-neutral-100 flex-shrink-0"
+              className="w-24 h-24 rounded-xl object-cover border border-neutral-100 flex-shrink-0"
             />
           ) : (
-            <div className="w-[72px] h-[100px] rounded-lg bg-neutral-100 flex-shrink-0" />
+            <div className="w-24 h-24 rounded-xl bg-neutral-100 flex-shrink-0" />
           )}
-          <div className="text-sm space-y-1 flex-1 min-w-0 pt-0.5">
+          <div className="text-sm space-y-1.5 flex-1 min-w-0">
             <Row label={cropLabel} value={product?.name} />
             {product?.sub_category && <Row label="Type" value={product.sub_category} />}
             {product?.variety && <Row label="Variety" value={product.variety} />}
