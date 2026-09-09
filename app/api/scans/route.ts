@@ -5,7 +5,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("scan_requests")
     .select(
-      `id, customer_name, customer_phone, latitude, longitude, location_status, created_at,
+      `id, customer_name, customer_phone, latitude, longitude, location_status, location_place, created_at,
        batches ( batch_number, products ( name ) )`
     )
     .eq("company_id", DEMO_COMPANY_ID)

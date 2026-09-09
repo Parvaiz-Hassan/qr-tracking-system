@@ -105,7 +105,7 @@ export default function VerifyPage({
     }
   }
 
-  function captureLocationInBackground(scanId: string) {
+  function captureLocationInBackground(scanId: string, isRetry = false) {
     if (!navigator.geolocation) {
       patchLocation(scanId, null, null, "unsupported");
       return;
@@ -115,11 +115,20 @@ export default function VerifyPage({
         patchLocation(scanId, pos.coords.latitude, pos.coords.longitude, "granted");
       },
       (geoErr) => {
+        // A single timeout is common on the first GPS fix (cold start).
+        // Since this never blocks the UI, it's cheap to try once more
+        // before giving up and recording it as a real timeout.
+        if (geoErr.code === 3 && !isRetry) {
+          captureLocationInBackground(scanId, true);
+          return;
+        }
         const status =
           geoErr.code === 1 ? "denied" : geoErr.code === 3 ? "timed_out" : "unavailable";
         patchLocation(scanId, null, null, status);
       },
-      { timeout: 8000, enableHighAccuracy: false }
+      // Generous timeout and accept a recent cached fix — this runs in
+      // the background now, so there's no UX cost to being patient.
+      { timeout: 20000, maximumAge: 60000, enableHighAccuracy: false }
     );
   }
 
@@ -258,8 +267,8 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
         )}
 
         {/* Verified banner */}
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-6 py-5 text-center mb-3">
-          <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-5 py-3 text-center mb-3">
+          <div className="w-11 h-11 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-1.5">
             <CheckIcon />
           </div>
           <h1 className="text-emerald-800 font-bold text-lg">PRODUCT VERIFIED</h1>
@@ -269,17 +278,17 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
         </div>
 
         {/* Product summary */}
-        <div className="bg-white border border-neutral-200 rounded-2xl p-4 flex items-center gap-4 mb-3">
+        <div className="bg-white border border-neutral-200 rounded-2xl p-3 flex items-center gap-3 mb-3">
           {product?.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
-              className="w-20 h-20 rounded-lg object-cover border border-neutral-100 flex-shrink-0"
+              className="w-16 h-16 rounded-lg object-cover border border-neutral-100 flex-shrink-0"
             />
           ) : (
-            <div className="w-20 h-20 rounded-lg bg-neutral-100 flex-shrink-0" />
+            <div className="w-16 h-16 rounded-lg bg-neutral-100 flex-shrink-0" />
           )}
-          <div className="text-sm space-y-1 flex-1 min-w-0">
+          <div className="text-sm space-y-0.5 flex-1 min-w-0">
             <Row label={cropLabel} value={product?.name} />
             {product?.sub_category && <Row label="Type" value={product.sub_category} />}
             {product?.variety && <Row label="Variety" value={product.variety} />}

@@ -9,6 +9,7 @@ type Scan = {
   latitude: number | null;
   longitude: number | null;
   location_status: string | null;
+  location_place: string | null;
   created_at: string;
   batches:
     | { batch_number: string; products: { name: string } | { name: string }[] }
@@ -76,7 +77,9 @@ export default function ScanLogPage() {
                   <td className="px-4 py-2.5">{s.customer_name || "—"}</td>
                   <td className="px-4 py-2.5">{s.customer_phone || "—"}</td>
                   <td className="px-4 py-2.5 text-neutral-500">
-                    {s.latitude && s.longitude
+                    {s.location_place
+                      ? s.location_place
+                      : s.latitude && s.longitude
                       ? `${s.latitude.toFixed(3)}, ${s.longitude.toFixed(3)}`
                       : locationStatusLabel(s.location_status)}
                   </td>
