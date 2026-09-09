@@ -9,7 +9,7 @@ export async function POST(
 ) {
   const { slug } = await params;
   const body = await req.json();
-  const { name, phone, latitude, longitude } = body;
+  const { name, phone, latitude, longitude, locationStatus } = body;
 
   if (!name || !phone) {
     return NextResponse.json(
@@ -70,6 +70,7 @@ export async function POST(
     customer_phone: phone,
     latitude: latitude ?? null,
     longitude: longitude ?? null,
+    location_status: locationStatus || null,
     ip_hash: ipHash,
     message_status: "verified",
   });

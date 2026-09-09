@@ -8,6 +8,7 @@ type Scan = {
   customer_phone: string | null;
   latitude: number | null;
   longitude: number | null;
+  location_status: string | null;
   created_at: string;
   batches:
     | { batch_number: string; products: { name: string } | { name: string }[] }
@@ -77,7 +78,7 @@ export default function ScanLogPage() {
                   <td className="px-4 py-2.5 text-neutral-500">
                     {s.latitude && s.longitude
                       ? `${s.latitude.toFixed(3)}, ${s.longitude.toFixed(3)}`
-                      : "—"}
+                      : locationStatusLabel(s.location_status)}
                   </td>
                   <td className="px-4 py-2.5 text-neutral-500">
                     {new Date(s.created_at).toLocaleString()}
@@ -90,4 +91,19 @@ export default function ScanLogPage() {
       </div>
     </div>
   );
+}
+
+function locationStatusLabel(status: string | null) {
+  switch (status) {
+    case "denied":
+      return "Denied by customer";
+    case "timed_out":
+      return "Timed out";
+    case "unsupported":
+      return "Not supported";
+    case "unavailable":
+      return "Unavailable";
+    default:
+      return "—";
+  }
 }

@@ -62,28 +62,37 @@ export default function VerifyPage({
     setError("");
 
     // Best-effort silent location — never blocks the flow either way.
-    // Generous timeout since GPS can take a few seconds indoors.
+    // Generous timeout since GPS can take a few seconds indoors. We also
+    // record WHY it failed (denied/timed out/unsupported) so the admin
+    // scan log can distinguish "customer said no" from an actual bug,
+    // instead of just showing a blank dash either way.
     let latitude: number | null = null;
     let longitude: number | null = null;
-    try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        if (!navigator.geolocation) return reject();
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: 8000,
-          enableHighAccuracy: false,
+    let locationStatus = "unsupported";
+
+    if (navigator.geolocation) {
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 8000,
+            enableHighAccuracy: false,
+          });
         });
-      });
-      latitude = pos.coords.latitude;
-      longitude = pos.coords.longitude;
-    } catch {
-      // Silently ignore — denied, unsupported, or timed out. Proceed anyway.
+        latitude = pos.coords.latitude;
+        longitude = pos.coords.longitude;
+        locationStatus = "granted";
+      } catch (geoErr: any) {
+        if (geoErr?.code === 1) locationStatus = "denied";
+        else if (geoErr?.code === 3) locationStatus = "timed_out";
+        else locationStatus = "unavailable";
+      }
     }
 
     try {
       const res = await fetch(`/api/verify/${slug}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, latitude, longitude }),
+        body: JSON.stringify({ name, phone, latitude, longitude, locationStatus }),
       });
 
       if (res.status === 404) {
@@ -221,7 +230,7 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
       <div className="w-full max-w-md">
         {/* Company header */}
         {(company?.logo_url || companyName) && (
-          <div className="flex items-center gap-2 px-1 pb-3">
+          <div className="bg-white border border-neutral-200 rounded-2xl flex items-center gap-2 px-4 py-3 mb-3">
             {company?.logo_url && (
               <img src={company.logo_url} alt={companyName} className="h-8 object-contain" />
             )}
@@ -264,7 +273,7 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
 
         {/* Quality & test details */}
         {quality.length > 0 && (
-          <Section title={`${product?.category === "fertilizer" ? "Product" : "Seed"} Quality & Test Details`} icon="🧪">
+          <Section title={`${product?.category === "fertilizer" ? "Product" : "Seed"} Quality & Test Details`} icon={<FlaskIcon />}>
             {quality.map((q, i) => (
               <DetailRow key={i} label={q.label} value={q.value} index={i} />
             ))}
@@ -273,7 +282,7 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
 
         {/* Traceability & pack details */}
         {traceabilityRows.length > 0 && (
-          <Section title="Traceability & Pack Details" icon="📅">
+          <Section title="Traceability & Pack Details" icon={<CalendarIcon />}>
             {traceabilityRows.map((r, i) => (
               <DetailRow key={i} label={r.label} value={r.value} index={i} />
             ))}
@@ -283,7 +292,7 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
         {/* Authenticity status */}
         <div className="bg-white border border-neutral-200 rounded-2xl p-4 mt-3">
           <p className="text-emerald-800 font-medium text-sm mb-2.5 flex items-center gap-2">
-            <span>🛡️</span> Authenticity Status
+            <ShieldIcon /> Authenticity Status
           </p>
           <div className="bg-emerald-50 rounded-xl px-4 py-2.5 flex items-center gap-3">
             <div className="w-7 h-7 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -297,7 +306,8 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
 
         {companyName && (
           <p className="text-neutral-400 text-xs text-center mt-3 px-4">
-            ⓘ Scan result linked to {companyName} production &amp; quality records.
+            ⓘ Scan result linked to {companyName} production and quality
+            records.
           </p>
         )}
 
@@ -317,13 +327,13 @@ function Section({
   children,
 }: {
   title: string;
-  icon: string;
+  icon: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden mb-3">
-      <div className="bg-emerald-50 px-4 py-2 flex items-center gap-2">
-        <span>{icon}</span>
+      <div className="bg-emerald-50 px-4 py-2 flex items-center gap-2 text-emerald-700">
+        {icon}
         <p className="text-emerald-800 font-semibold text-xs uppercase tracking-wide">
           {title}
         </p>
@@ -352,6 +362,42 @@ function DetailRow({ label, value, index }: { label: string; value: string; inde
       <span className="text-neutral-500">{label}</span>
       <span className="font-medium text-neutral-900">: {value}</span>
     </div>
+  );
+}
+
+function FlaskIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M9 2v6.5L4.5 17a2 2 0 001.8 3h11.4a2 2 0 001.8-3L15 8.5V2M9 2h6M9 13h6"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <rect x={3} y={5} width={18} height={16} rx={2} stroke="currentColor" strokeWidth={2} />
+      <path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
