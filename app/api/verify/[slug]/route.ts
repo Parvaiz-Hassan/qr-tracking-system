@@ -24,7 +24,7 @@ export async function POST(
     .select(
       `id, company_id, batch_number, label_number, manufacturing_date, expiry_date,
        date_of_testing, net_weight, mrp, usp,
-       products ( name, variety, category, uses, instructions, image_url ),
+       products ( name, variety, category, sub_category, uses, instructions, image_url ),
        batch_attributes ( section, label, value, sort_order )`
     )
     .eq("qr_slug", slug)
@@ -33,6 +33,13 @@ export async function POST(
   if (batchError || !batch) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
+
+  // Company branding (logo/name/tagline/thank-you message) for the header/footer
+  const { data: company } = await supabaseAdmin
+    .from("companies")
+    .select("name, logo_url, tagline, thank_you_message")
+    .eq("id", batch.company_id)
+    .single();
 
   // 2. Count existing successful verifications for this batch
   const { count, error: countError } = await supabaseAdmin
@@ -71,7 +78,12 @@ export async function POST(
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ blocked: false, batch, scanCount: (count ?? 0) + 1 });
+  return NextResponse.json({
+    blocked: false,
+    batch,
+    company,
+    scanCount: (count ?? 0) + 1,
+  });
 }
 
 async function hash(value: string) {

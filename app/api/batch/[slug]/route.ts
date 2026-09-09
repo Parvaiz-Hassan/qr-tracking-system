@@ -15,9 +15,9 @@ export async function GET(
   const { data, error } = await supabaseAdmin
     .from("batches")
     .select(
-      `batch_number, label_number, manufacturing_date, expiry_date, date_of_testing,
+      `company_id, batch_number, label_number, manufacturing_date, expiry_date, date_of_testing,
        net_weight, mrp, usp,
-       products ( name, variety, category, uses, instructions, image_url ),
+       products ( name, variety, category, sub_category, uses, instructions, image_url ),
        batch_attributes ( section, label, value, sort_order )`
     )
     .eq("qr_slug", slug)
@@ -27,5 +27,11 @@ export async function GET(
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
-  return NextResponse.json(data);
+  const { data: company } = await supabaseAdmin
+    .from("companies")
+    .select("name, logo_url, tagline, thank_you_message")
+    .eq("id", data.company_id)
+    .single();
+
+  return NextResponse.json({ ...data, company });
 }

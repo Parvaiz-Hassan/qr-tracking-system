@@ -10,7 +10,7 @@ export async function GET() {
     .select(
       `id, batch_number, qr_slug, label_number, manufacturing_date, expiry_date,
        date_of_testing, net_weight, mrp, usp,
-       products ( id, name, variety, category, uses, instructions, image_url ),
+       products ( id, name, variety, category, sub_category, uses, instructions, image_url ),
        scan_requests ( id )`
     )
     .eq("company_id", DEMO_COMPANY_ID)
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     name,
     variety,
     category,
+    sub_category,
     uses,
     instructions,
     image_url,
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
       name,
       variety: variety || null,
       category,
+      sub_category: sub_category || null,
       uses,
       instructions,
       image_url: image_url || null,

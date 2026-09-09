@@ -14,7 +14,7 @@ export async function GET(
     .select(
       `id, batch_number, label_number, manufacturing_date, expiry_date, date_of_testing,
        net_weight, mrp, usp,
-       products ( id, name, variety, category, uses, instructions, image_url ),
+       products ( id, name, variety, category, sub_category, uses, instructions, image_url ),
        batch_attributes ( label, value, sort_order )`
     )
     .eq("id", batchId)
@@ -41,6 +41,7 @@ export async function PATCH(
     name,
     variety,
     category,
+    sub_category,
     uses,
     instructions,
     image_url,
@@ -72,6 +73,7 @@ export async function PATCH(
       name,
       variety: variety || null,
       category,
+      sub_category: sub_category || null,
       uses,
       instructions,
       ...(image_url ? { image_url } : {}),

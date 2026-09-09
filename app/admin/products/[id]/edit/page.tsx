@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import { CATEGORY_OPTIONS, CategoryKey } from "@/lib/categories";
 
 type QualityAttr = { label: string; value: string };
 
@@ -21,7 +22,8 @@ export default function EditBatchPage({
   const [form, setForm] = useState({
     name: "",
     variety: "",
-    category: "seed",
+    category: "seed" as CategoryKey,
+    sub_category: "",
     uses: "",
     instructions: "",
     batch_number: "",
@@ -45,6 +47,7 @@ export default function EditBatchPage({
           name: product?.name || "",
           variety: product?.variety || "",
           category: product?.category || "seed",
+          sub_category: product?.sub_category || "",
           uses: product?.uses || "",
           instructions: product?.instructions || "",
           batch_number: b.batch_number || "",
@@ -136,17 +139,42 @@ export default function EditBatchPage({
           </div>
         </div>
 
-        <div>
-          <label className="text-xs text-neutral-500">Category</label>
-          <select
-            className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-          >
-            <option value="seed">Seed</option>
-            <option value="fertilizer">Fertilizer</option>
-            <option value="other">Other</option>
-          </select>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-neutral-500">Category</label>
+            <select
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
+              value={form.category}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  category: e.target.value as CategoryKey,
+                  sub_category: "",
+                })
+              }
+            >
+              {Object.entries(CATEGORY_OPTIONS).map(([key, opt]) => (
+                <option key={key} value={key}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-neutral-500">Sub-category</label>
+            <select
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
+              value={form.sub_category}
+              onChange={(e) => setForm({ ...form, sub_category: e.target.value })}
+            >
+              <option value="">— Select —</option>
+              {CATEGORY_OPTIONS[form.category]?.subCategories.map((sc) => (
+                <option key={sc} value={sc}>
+                  {sc}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { CATEGORY_OPTIONS, CategoryKey } from "@/lib/categories";
 
 type QualityAttr = { label: string; value: string };
 
@@ -12,8 +13,8 @@ type BatchRow = {
   label_number: string | null;
   scan_count: number;
   products:
-    | { id: string; name: string; variety: string | null; category: string; image_url: string | null }
-    | Array<{ id: string; name: string; variety: string | null; category: string; image_url: string | null }>;
+    | { id: string; name: string; variety: string | null; category: string; sub_category: string | null; image_url: string | null }
+    | Array<{ id: string; name: string; variety: string | null; category: string; sub_category: string | null; image_url: string | null }>;
 };
 
 const SCAN_LIMIT = 3;
@@ -32,7 +33,8 @@ export default function AdminPage() {
   const [form, setForm] = useState({
     name: "",
     variety: "",
-    category: "seed",
+    category: "seed" as CategoryKey,
+    sub_category: "",
     uses: "",
     instructions: "",
     batch_number: "",
@@ -121,6 +123,7 @@ export default function AdminPage() {
           name: "",
           variety: "",
           category: "seed",
+          sub_category: "",
           uses: "",
           instructions: "",
           batch_number: "",
@@ -147,6 +150,16 @@ export default function AdminPage() {
   function qrImageUrl(slug: string) {
     const target = `${baseUrl}/p/${slug}`;
     return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+      target
+    )}`;
+  }
+
+  // High resolution + high error-correction, suitable for print on
+  // pouches/bags/boxes. Opened in a new tab (not force-downloaded) so
+  // it can be right-clicked/saved or printed directly at full size.
+  function qrPrintUrl(slug: string) {
+    const target = `${baseUrl}/p/${slug}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&ecc=H&margin=10&data=${encodeURIComponent(
       target
     )}`;
   }
@@ -217,17 +230,42 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div>
-              <label className="text-xs text-neutral-500">Category</label>
-              <select
-                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-              >
-                <option value="seed">Seed</option>
-                <option value="fertilizer">Fertilizer</option>
-                <option value="other">Other</option>
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-neutral-500">Category</label>
+                <select
+                  className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
+                  value={form.category}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      category: e.target.value as CategoryKey,
+                      sub_category: "", // reset when category changes
+                    })
+                  }
+                >
+                  {Object.entries(CATEGORY_OPTIONS).map(([key, opt]) => (
+                    <option key={key} value={key}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-neutral-500">Sub-category</label>
+                <select
+                  className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
+                  value={form.sub_category}
+                  onChange={(e) => setForm({ ...form, sub_category: e.target.value })}
+                >
+                  <option value="">— Select —</option>
+                  {CATEGORY_OPTIONS[form.category]?.subCategories.map((sc) => (
+                    <option key={sc} value={sc}>
+                      {sc}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -441,11 +479,12 @@ export default function AdminPage() {
 
                     <div className="mt-2 flex gap-2">
                       <a
-                        href={qrImageUrl(b.qr_slug) + "&format=png"}
-                        download={`qr-${b.batch_number}.png`}
+                        href={qrPrintUrl(b.qr_slug) + "&format=png"}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-xs bg-neutral-100 hover:bg-neutral-200 px-2 py-1 rounded"
                       >
-                        Download QR
+                        Download QR (print quality)
                       </a>
                       <Link
                         href={`/admin/products/${b.id}/edit`}
