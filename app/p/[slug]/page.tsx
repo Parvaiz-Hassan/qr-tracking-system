@@ -256,9 +256,9 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
       <div className="w-full max-w-md">
         {/* Company header */}
         {(company?.logo_url || companyName) && (
-          <div className="bg-white border border-neutral-200 rounded-2xl flex items-center justify-center px-4 py-4 mb-3">
+          <div className="bg-white border border-neutral-200 rounded-2xl flex items-center justify-center px-4 py-2.5 mb-3">
             {company?.logo_url && (
-              <img src={company.logo_url} alt={companyName} className="h-12 object-contain" />
+              <img src={company.logo_url} alt={companyName} className="h-10 object-contain" />
             )}
             {!company?.logo_url && companyName && (
               <p className="font-bold text-neutral-900 text-lg">{companyName}</p>
@@ -267,28 +267,28 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
         )}
 
         {/* Verified banner */}
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-5 py-3 text-center mb-3">
-          <div className="w-11 h-11 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-1.5">
+        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-5 py-2.5 text-center mb-3">
+          <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-1">
             <CheckIcon />
           </div>
-          <h1 className="text-emerald-800 font-bold text-lg">PRODUCT VERIFIED</h1>
-          <p className="text-emerald-700 text-sm mt-0.5">
+          <h1 className="text-emerald-800 font-bold text-lg leading-tight">PRODUCT VERIFIED</h1>
+          <p className="text-emerald-700 text-sm mt-0.5 leading-snug">
             This is a genuine {companyName ? `${companyName} ` : ""}product.
           </p>
         </div>
 
         {/* Product summary */}
-        <div className="bg-white border border-neutral-200 rounded-2xl p-3 flex items-center gap-3 mb-3">
+        <div className="bg-white border border-neutral-200 rounded-2xl p-3 flex items-start gap-3 mb-3">
           {product?.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
-              className="w-16 h-16 rounded-lg object-cover border border-neutral-100 flex-shrink-0"
+              className="w-[72px] h-[100px] rounded-lg object-cover border border-neutral-100 flex-shrink-0"
             />
           ) : (
-            <div className="w-16 h-16 rounded-lg bg-neutral-100 flex-shrink-0" />
+            <div className="w-[72px] h-[100px] rounded-lg bg-neutral-100 flex-shrink-0" />
           )}
-          <div className="text-sm space-y-0.5 flex-1 min-w-0">
+          <div className="text-sm space-y-1 flex-1 min-w-0 pt-0.5">
             <Row label={cropLabel} value={product?.name} />
             {product?.sub_category && <Row label="Type" value={product.sub_category} />}
             {product?.variety && <Row label="Variety" value={product.variety} />}
@@ -383,7 +383,7 @@ function Section({
 function Row({ label, value }: { label: string; value?: string }) {
   if (!value) return null;
   return (
-    <p className="text-neutral-600">
+    <p className="text-neutral-600 leading-tight">
       {label} : <span className="font-semibold text-neutral-900">{value}</span>
     </p>
   );

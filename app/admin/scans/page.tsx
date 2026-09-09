@@ -10,6 +10,7 @@ type Scan = {
   longitude: number | null;
   location_status: string | null;
   location_place: string | null;
+  ip_address: string | null;
   created_at: string;
   batches:
     | { batch_number: string; products: { name: string } | { name: string }[] }
@@ -45,20 +46,21 @@ export default function ScanLogPage() {
               <th className="px-4 py-2.5">Name</th>
               <th className="px-4 py-2.5">Phone</th>
               <th className="px-4 py-2.5">Location</th>
+              <th className="px-4 py-2.5">IP Address</th>
               <th className="px-4 py-2.5">Time</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-neutral-400">
+                <td colSpan={7} className="px-4 py-6 text-center text-neutral-400">
                   Loading...
                 </td>
               </tr>
             )}
             {!loading && scans.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-neutral-400">
+                <td colSpan={7} className="px-4 py-6 text-center text-neutral-400">
                   No scans yet.
                 </td>
               </tr>
@@ -82,6 +84,9 @@ export default function ScanLogPage() {
                       : s.latitude && s.longitude
                       ? `${s.latitude.toFixed(3)}, ${s.longitude.toFixed(3)}`
                       : locationStatusLabel(s.location_status)}
+                  </td>
+                  <td className="px-4 py-2.5 text-neutral-500 font-mono text-xs">
+                    {s.ip_address || "—"}
                   </td>
                   <td className="px-4 py-2.5 text-neutral-500">
                     {new Date(s.created_at).toLocaleString()}

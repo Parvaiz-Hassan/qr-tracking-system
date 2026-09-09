@@ -76,6 +76,7 @@ export async function POST(
       longitude: longitude ?? null,
       location_status: locationStatus || null,
       ip_hash: ipHash,
+      ip_address: rawIp,
       message_status: "verified",
     })
     .select("id")
