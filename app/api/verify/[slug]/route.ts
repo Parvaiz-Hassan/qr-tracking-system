@@ -62,18 +62,24 @@ export async function POST(
     "unknown";
   const ipHash = await hash(rawIp);
 
-  // 4. Log the scan
-  const { error: insertError } = await supabaseAdmin.from("scan_requests").insert({
-    batch_id: batch.id,
-    company_id: batch.company_id,
-    customer_name: name,
-    customer_phone: phone,
-    latitude: latitude ?? null,
-    longitude: longitude ?? null,
-    location_status: locationStatus || null,
-    ip_hash: ipHash,
-    message_status: "verified",
-  });
+  // 4. Log the scan (location fields are usually still null here now —
+  // the client calls this immediately without waiting on geolocation,
+  // then patches location in separately via /api/scans/{id}/location)
+  const { data: inserted, error: insertError } = await supabaseAdmin
+    .from("scan_requests")
+    .insert({
+      batch_id: batch.id,
+      company_id: batch.company_id,
+      customer_name: name,
+      customer_phone: phone,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
+      location_status: locationStatus || null,
+      ip_hash: ipHash,
+      message_status: "verified",
+    })
+    .select("id")
+    .single();
 
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
@@ -83,6 +89,7 @@ export async function POST(
     blocked: false,
     batch,
     company,
+    scanId: inserted.id,
     scanCount: (count ?? 0) + 1,
   });
 }

@@ -61,38 +61,15 @@ export default function VerifyPage({
     setLoading(true);
     setError("");
 
-    // Best-effort silent location — never blocks the flow either way.
-    // Generous timeout since GPS can take a few seconds indoors. We also
-    // record WHY it failed (denied/timed out/unsupported) so the admin
-    // scan log can distinguish "customer said no" from an actual bug,
-    // instead of just showing a blank dash either way.
-    let latitude: number | null = null;
-    let longitude: number | null = null;
-    let locationStatus = "unsupported";
-
-    if (navigator.geolocation) {
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 8000,
-            enableHighAccuracy: false,
-          });
-        });
-        latitude = pos.coords.latitude;
-        longitude = pos.coords.longitude;
-        locationStatus = "granted";
-      } catch (geoErr: any) {
-        if (geoErr?.code === 1) locationStatus = "denied";
-        else if (geoErr?.code === 3) locationStatus = "timed_out";
-        else locationStatus = "unavailable";
-      }
-    }
-
+    // Verify immediately — never wait on geolocation for this. Location
+    // is captured separately in the background (see below) and patched
+    // onto the scan record after the fact, so the customer never waits
+    // on a GPS fix (which can legitimately take several seconds).
     try {
       const res = await fetch(`/api/verify/${slug}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, latitude, longitude, locationStatus }),
+        body: JSON.stringify({ name, phone }),
       });
 
       if (res.status === 404) {
@@ -113,12 +90,52 @@ export default function VerifyPage({
         setBatch(data.batch);
         setCompany(data.company);
         setStage("result");
+
+        // Fire-and-forget: capture location in the background and patch
+        // it onto this scan once resolved. Never awaited, never blocks
+        // the UI — the result is already showing.
+        if (data.scanId) {
+          captureLocationInBackground(data.scanId);
+        }
       }
     } catch {
       setError("Network error — please try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function captureLocationInBackground(scanId: string) {
+    if (!navigator.geolocation) {
+      patchLocation(scanId, null, null, "unsupported");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        patchLocation(scanId, pos.coords.latitude, pos.coords.longitude, "granted");
+      },
+      (geoErr) => {
+        const status =
+          geoErr.code === 1 ? "denied" : geoErr.code === 3 ? "timed_out" : "unavailable";
+        patchLocation(scanId, null, null, status);
+      },
+      { timeout: 8000, enableHighAccuracy: false }
+    );
+  }
+
+  function patchLocation(
+    scanId: string,
+    latitude: number | null,
+    longitude: number | null,
+    locationStatus: string
+  ) {
+    fetch(`/api/scans/${scanId}/location`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ latitude, longitude, locationStatus }),
+    }).catch(() => {
+      // Best-effort only — if this fails, nothing user-facing depends on it.
+    });
   }
 
   if (stage === "notfound") {
@@ -230,12 +247,12 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
       <div className="w-full max-w-md">
         {/* Company header */}
         {(company?.logo_url || companyName) && (
-          <div className="bg-white border border-neutral-200 rounded-2xl flex items-center gap-2 px-4 py-3 mb-3">
+          <div className="bg-white border border-neutral-200 rounded-2xl flex items-center justify-center px-4 py-4 mb-3">
             {company?.logo_url && (
-              <img src={company.logo_url} alt={companyName} className="h-8 object-contain" />
+              <img src={company.logo_url} alt={companyName} className="h-12 object-contain" />
             )}
             {!company?.logo_url && companyName && (
-              <p className="font-bold text-neutral-900">{companyName}</p>
+              <p className="font-bold text-neutral-900 text-lg">{companyName}</p>
             )}
           </div>
         )}
@@ -311,10 +328,21 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
           </p>
         )}
 
+        {/* Benefit icons row */}
+        <div className="grid grid-cols-4 gap-2 mt-4 px-1">
+          <BenefitIcon icon={<LeafIcon />} label="Grow Better" />
+          <BenefitIcon icon={<ChartIcon />} label="Higher Productivity" />
+          <BenefitIcon icon={<ShieldIcon />} label="Trusted Quality" />
+          <BenefitIcon icon={<PeopleIcon />} label="Farmer Prosperity" />
+        </div>
+
         {company?.thank_you_message && (
-          <p className="text-neutral-500 text-xs text-center mt-3 px-4 leading-relaxed">
-            {company.thank_you_message}
-          </p>
+          <div className="flex flex-col items-center mt-4 px-4">
+            <LeafIcon small />
+            <p className="text-neutral-500 text-xs text-center mt-1.5 leading-relaxed">
+              {company.thank_you_message}
+            </p>
+          </div>
         )}
       </div>
     </main>
@@ -362,6 +390,63 @@ function DetailRow({ label, value, index }: { label: string; value: string; inde
       <span className="text-neutral-500">{label}</span>
       <span className="font-medium text-neutral-900">: {value}</span>
     </div>
+  );
+}
+
+function BenefitIcon({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex flex-col items-center text-center gap-1.5">
+      <div className="w-11 h-11 rounded-full bg-neutral-100 flex items-center justify-center text-emerald-700">
+        {icon}
+      </div>
+      <p className="text-neutral-500 text-[10px] leading-tight">{label}</p>
+    </div>
+  );
+}
+
+function LeafIcon({ small }: { small?: boolean }) {
+  const size = small ? 20 : 20;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M4 20c8-1 14-7 15-15-8 1-14 7-15 15z"
+        fill="currentColor"
+        className="text-emerald-600"
+      />
+      <path
+        d="M4 20c3-6 7-10 13-13"
+        stroke="white"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M4 20V10M11 20V4M18 20v-6"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <circle cx={9} cy={8} r={3} stroke="currentColor" strokeWidth={2} />
+      <path
+        d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 8a3 3 0 110 6M16.5 14c2.5.3 4.5 2.5 4.5 6"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
