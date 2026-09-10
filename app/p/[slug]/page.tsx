@@ -278,7 +278,7 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
         </div>
 
         {/* Product summary */}
-        <div className="bg-white border border-neutral-200 rounded-2xl p-4 flex items-center gap-5 mb-3">
+        <div className="bg-white border border-neutral-200 rounded-2xl p-4 flex items-center gap-6 mb-3">
           {product?.image_url ? (
             <img
               src={product.image_url}
@@ -288,7 +288,7 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
           ) : (
             <div className="w-24 h-24 rounded-xl bg-neutral-100 flex-shrink-0" />
           )}
-          <div className="text-sm space-y-1.5 flex-1 min-w-0">
+          <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm flex-1 min-w-0">
             <Row label={cropLabel} value={product?.name} />
             {product?.sub_category && <Row label="Type" value={product.sub_category} />}
             {product?.variety && <Row label="Variety" value={product.variety} />}
@@ -318,13 +318,10 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
         {/* Authenticity status */}
         <div className="bg-white border border-neutral-200 rounded-2xl p-4 mt-3">
           <p className="text-emerald-800 font-medium text-sm mb-2.5 flex items-center gap-2">
-            <ShieldIcon /> Authenticity Status
+            <ShieldCheckIcon /> Authenticity Status
           </p>
-          <div className="bg-emerald-50 rounded-xl px-4 py-2.5 flex items-center gap-3">
-            <div className="w-7 h-7 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <CheckIcon small />
-            </div>
-            <p className="text-emerald-800 text-sm font-medium">
+          <div className="bg-emerald-50 rounded-xl px-4 py-2.5 flex justify-center">
+            <p className="text-emerald-800 text-xs font-medium whitespace-nowrap overflow-x-auto text-center">
               QR verified &bull; Lot traceable &bull; QC record available
             </p>
           </div>
@@ -339,15 +336,15 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
 
         {/* Benefit icons row */}
         <div className="grid grid-cols-4 gap-2 mt-4 px-1">
-          <BenefitIcon icon={<LeafIcon />} label="Grow Better" />
+          <BenefitIcon icon={<img src="/geneva-leaf-mark.png" alt="" className="w-6 h-6 object-contain" />} label="Grow Better" />
           <BenefitIcon icon={<ChartIcon />} label="Higher Productivity" />
-          <BenefitIcon icon={<ShieldIcon />} label="Trusted Quality" />
+          <BenefitIcon icon={<ShieldCheckIcon filled />} label="Trusted Quality" />
           <BenefitIcon icon={<PeopleIcon />} label="Farmer Prosperity" />
         </div>
 
         {company?.thank_you_message && (
           <div className="flex flex-col items-center mt-4 px-4">
-            <LeafIcon small />
+            <img src="/geneva-leaf-mark.png" alt="" className="w-6 h-6 object-contain" />
             <p className="text-neutral-500 text-xs text-center mt-1.5 leading-relaxed">
               {company.thank_you_message}
             </p>
@@ -383,9 +380,13 @@ function Section({
 function Row({ label, value }: { label: string; value?: string }) {
   if (!value) return null;
   return (
-    <p className="text-neutral-600 leading-tight">
-      {label} : <span className="font-semibold text-neutral-900">{value}</span>
-    </p>
+    <>
+      <span className="text-neutral-500 whitespace-nowrap">{label}</span>
+      <span className="text-neutral-900">
+        <span className="text-neutral-400">: </span>
+        <span className="font-semibold">{value}</span>
+      </span>
+    </>
   );
 }
 
@@ -405,7 +406,7 @@ function DetailRow({ label, value, index }: { label: string; value: string; inde
 function BenefitIcon({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div className="flex flex-col items-center text-center gap-1.5">
-      <div className="w-11 h-11 rounded-full bg-neutral-100 flex items-center justify-center text-emerald-700">
+      <div className="w-12 h-12 rounded-full bg-neutral-50 border-[5px] border-neutral-200 flex items-center justify-center text-emerald-600">
         {icon}
       </div>
       <p className="text-neutral-500 text-[10px] leading-tight">{label}</p>
@@ -434,27 +435,21 @@ function LeafIcon({ small }: { small?: boolean }) {
 
 function ChartIcon() {
   return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <path
-        d="M4 20V10M11 20V4M18 20v-6"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="currentColor">
+      <rect x={3} y={12} width={4} height={9} rx={1} />
+      <rect x={10} y={6} width={4} height={15} rx={1} />
+      <rect x={17} y={9} width={4} height={12} rx={1} />
     </svg>
   );
 }
 
 function PeopleIcon() {
   return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <circle cx={9} cy={8} r={3} stroke="currentColor" strokeWidth={2} />
-      <path
-        d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 8a3 3 0 110 6M16.5 14c2.5.3 4.5 2.5 4.5 6"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="currentColor">
+      <circle cx={9} cy={8} r={3.5} />
+      <circle cx={17} cy={9} r={2.5} />
+      <path d="M2 20c0-3.6 3.1-6.5 7-6.5s7 2.9 7 6.5v1H2v-1z" />
+      <path d="M16 13.5c2.9.3 5 2.8 5 6v1.5h-3v-1.5c0-2-.7-3.7-2-5.9z" />
     </svg>
   );
 }
@@ -482,14 +477,20 @@ function CalendarIcon() {
   );
 }
 
-function ShieldIcon() {
+// Filled shield with a white checkmark cut out of it — used both as the
+// small "Authenticity Status" header icon and (larger) in the benefit row.
+function ShieldCheckIcon({ filled }: { filled?: boolean }) {
+  const size = filled ? 20 : 18;
   return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" />
       <path
-        d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"
-        stroke="currentColor"
+        d="M8.5 12.5l2.3 2.3L16 10"
+        stroke="white"
         strokeWidth={2}
+        strokeLinecap="round"
         strokeLinejoin="round"
+        fill="none"
       />
     </svg>
   );
