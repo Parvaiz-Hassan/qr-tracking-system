@@ -44,13 +44,15 @@ export default function BlockedPage() {
       </p>
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-amber-800 text-xs mb-6">
-        Blocking is currently <strong>OFF</strong> per client request — these
-        QR codes are only listed here for visibility. Customers can still
-        see full product details on all of them, even the ones below. Flip
+        This overall-scan-count block is currently <strong>OFF</strong> per
+        client request — these QR codes are listed here for visibility
+        only. Product details still show regardless of total scan count.
+        A separate, active restriction now limits each individual mobile
+        number to 2 verifications per QR code (see the Scan Log to check
+        this). To turn this overall block back on, flip
         <code className="mx-1 px-1 bg-amber-100 rounded">ENFORCE_SCAN_LIMIT</code>
-        back to <code className="px-1 bg-amber-100 rounded">true</code> in
-        <code className="mx-1 px-1 bg-amber-100 rounded">app/api/verify/[slug]/route.ts</code>
-        to turn blocking back on.
+        to <code className="px-1 bg-amber-100 rounded">true</code> in
+        <code className="mx-1 px-1 bg-amber-100 rounded">app/api/verify/[slug]/route.ts</code>.
       </div>
 
       {loading && <p className="text-neutral-400 text-sm">Loading...</p>}

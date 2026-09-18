@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isValidIndianPhone, normalizePhone } from "@/lib/phone";
 
-const SCAN_LIMIT = 3; // 4th+ verify attempt for the same batch gets blocked (when ENFORCE_SCAN_LIMIT is true)
+const SCAN_LIMIT = 3; // legacy global per-QR limit (see ENFORCE_SCAN_LIMIT below)
 
-// Client asked (2026-09-18) to remove the scan-limit block for now, with
-// the intent to re-enable it later. Flip this back to `true` to restore
-// blocking on the customer-facing verify page — nothing else needs to
-// change. Scan counting, the /api/blocked endpoint, and the admin
-// "Blocked QR Codes" page all keep working exactly as before regardless
-// of this flag: they still compute counts and list batches over
-// SCAN_LIMIT, this flag only controls whether a real customer actually
-// gets stopped from seeing product details on /p/[slug].
+// Client asked (2026-09-18) to remove the OLD global scan-limit block —
+// flip this back to `true` to restore it. It's superseded for now by the
+// per-phone-number limit below (PER_PHONE_LIMIT), which is the active
+// restriction. Both can coexist if you ever want both rules at once.
 const ENFORCE_SCAN_LIMIT = false;
+
+// New restriction (added 2026-09-18): a single phone number can verify
+// the SAME QR code at most this many times. This is what actually stops
+// one farmer from burning through a code by himself — the old global
+// counter didn't distinguish who was scanning, so one person re-scanning
+// could "use up" the limit for everyone else.
+const PER_PHONE_LIMIT = 2;
 
 export async function POST(
   req: NextRequest,
@@ -27,6 +31,15 @@ export async function POST(
       { status: 400 }
     );
   }
+
+  if (!isValidIndianPhone(phone)) {
+    return NextResponse.json(
+      { error: "Please enter a valid 10-digit mobile number." },
+      { status: 400 }
+    );
+  }
+
+  const normalizedPhone = normalizePhone(phone);
 
   // 1. Look up the batch by its QR slug
   const { data: batch, error: batchError } = await supabaseAdmin
@@ -51,7 +64,9 @@ export async function POST(
     .eq("id", batch.company_id)
     .single();
 
-  // 2. Count existing successful verifications for this batch
+  // 2. Count existing successful verifications for this batch (overall —
+  // still tracked for the admin dashboard even though ENFORCE_SCAN_LIMIT
+  // is off) AND specifically from this phone number (the active limit).
   const { count, error: countError } = await supabaseAdmin
     .from("scan_requests")
     .select("id", { count: "exact", head: true })
@@ -61,11 +76,26 @@ export async function POST(
     return NextResponse.json({ error: countError.message }, { status: 500 });
   }
 
-  // Blocking is currently disabled per client request (see ENFORCE_SCAN_LIMIT
-  // above) — the count is still tracked and returned either way, so nothing
-  // downstream (admin dashboard, Blocked QR Codes page) loses data.
   if (ENFORCE_SCAN_LIMIT && (count ?? 0) >= SCAN_LIMIT) {
     return NextResponse.json({ blocked: true, scanCount: count });
+  }
+
+  const { count: phoneCount, error: phoneCountError } = await supabaseAdmin
+    .from("scan_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("batch_id", batch.id)
+    .eq("normalized_phone", normalizedPhone);
+
+  if (phoneCountError) {
+    return NextResponse.json({ error: phoneCountError.message }, { status: 500 });
+  }
+
+  if ((phoneCount ?? 0) >= PER_PHONE_LIMIT) {
+    return NextResponse.json({
+      phoneLimitExceeded: true,
+      message:
+        "You've already verified this product the maximum number of times from this mobile number. Please try scanning again using a different mobile number.",
+    });
   }
 
   // 3. Get a best-effort IP hash (never store the raw IP)
@@ -85,6 +115,7 @@ export async function POST(
       company_id: batch.company_id,
       customer_name: name,
       customer_phone: phone,
+      normalized_phone: normalizedPhone,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
       location_status: locationStatus || null,
@@ -101,6 +132,7 @@ export async function POST(
 
   return NextResponse.json({
     blocked: false,
+    phoneLimitExceeded: false,
     batch,
     company,
     scanId: inserted.id,

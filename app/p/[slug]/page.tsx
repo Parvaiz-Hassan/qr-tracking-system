@@ -2,6 +2,7 @@
 
 import { useState, use } from "react";
 import { detailLabelFor } from "@/lib/categories";
+import { isValidIndianPhone } from "@/lib/phone";
 
 type Company = {
   name: string;
@@ -48,18 +49,30 @@ export default function VerifyPage({
 }) {
   const { slug } = use(params);
 
-  const [stage, setStage] = useState<"gate" | "blocked" | "result" | "notfound">("gate");
+  const [stage, setStage] = useState<
+    "gate" | "blocked" | "phone_limit" | "result" | "notfound"
+  >("gate");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [phoneLimitMessage, setPhoneLimitMessage] = useState("");
   const [batch, setBatch] = useState<BatchData | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    // Client-side check first, for instant feedback — the real
+    // enforcement is server-side (below), since this alone can be
+    // bypassed by anyone editing the request directly.
+    if (!isValidIndianPhone(phone)) {
+      setError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    setLoading(true);
 
     // Verify immediately — never wait on geolocation for this. Location
     // is captured separately in the background (see below) and patched
@@ -86,6 +99,9 @@ export default function VerifyPage({
 
       if (data.blocked) {
         setStage("blocked");
+      } else if (data.phoneLimitExceeded) {
+        setPhoneLimitMessage(data.message || "");
+        setStage("phone_limit");
       } else {
         setBatch(data.batch);
         setCompany(data.company);
@@ -175,6 +191,22 @@ export default function VerifyPage({
     );
   }
 
+  if (stage === "phone_limit") {
+    return (
+      <Centered>
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+          <p className="text-amber-800 font-semibold mb-1">
+            Verification limit reached for this number
+          </p>
+          <p className="text-amber-700 text-sm">
+            {phoneLimitMessage ||
+              "You've already verified this product the maximum number of times from this mobile number. Please try again using a different mobile number."}
+          </p>
+        </div>
+      </Centered>
+    );
+  }
+
   if (stage === "result" && batch) {
     return <ResultScreen batch={batch} company={company} />;
   }
@@ -205,10 +237,12 @@ export default function VerifyPage({
             <input
               required
               type="tel"
+              inputMode="numeric"
+              maxLength={13}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
-              placeholder="+91 XXXXX XXXXX"
+              placeholder="10-digit mobile number"
             />
           </div>
           {error && <p className="text-red-600 text-sm">{error}</p>}

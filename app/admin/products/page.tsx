@@ -17,11 +17,12 @@ type BatchRow = {
     | Array<{ id: string; name: string; variety: string | null; category: string; sub_category: string | null; image_url: string | null }>;
 };
 
-const SCAN_LIMIT = 3;
-// Mirrors ENFORCE_SCAN_LIMIT in app/api/verify/[slug]/route.ts — keep
-// these two in sync. When false, customers are NOT actually blocked
-// even past SCAN_LIMIT; this badge is informational only in that case.
-const ENFORCE_SCAN_LIMIT = false;
+// Simplified per client request (2026-09-18): badge below is now a plain
+// scan count, no color/limit wording. The old global per-QR SCAN_LIMIT/
+// ENFORCE_SCAN_LIMIT toggle in app/api/verify/[slug]/route.ts still
+// exists if you want it back later — see that file's comments. The
+// active restriction now is a per-phone-number limit (2 verifies per
+// phone per QR code), enforced server-side in the verify API.
 
 export default function AdminPage() {
   const [batches, setBatches] = useState<BatchRow[]>([]);
@@ -439,7 +440,6 @@ export default function AdminPage() {
             )}
             {batches.map((b) => {
               const product = Array.isArray(b.products) ? b.products[0] : b.products;
-              const overLimit = b.scan_count > SCAN_LIMIT;
               return (
                 <div
                   key={b.id}
@@ -469,21 +469,8 @@ export default function AdminPage() {
                     </a>
 
                     <div className="mt-2 flex items-center gap-2">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          overLimit
-                            ? ENFORCE_SCAN_LIMIT
-                              ? "bg-red-100 text-red-700"
-                              : "bg-amber-100 text-amber-700"
-                            : "bg-neutral-100 text-neutral-600"
-                        }`}
-                      >
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600">
                         Scanned {b.scan_count} time{b.scan_count === 1 ? "" : "s"}
-                        {overLimit
-                          ? ENFORCE_SCAN_LIMIT
-                            ? " — blocked"
-                            : " — over limit (not blocked)"
-                          : ""}
                       </span>
                     </div>
 
