@@ -50,13 +50,17 @@ export default function VerifyPage({
   const { slug } = use(params);
 
   const [stage, setStage] = useState<
-    "gate" | "blocked" | "phone_limit" | "result" | "notfound"
+    "gate" | "blocked" | "phone_limit" | "expired" | "result" | "notfound"
   >("gate");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [phoneLimitMessage, setPhoneLimitMessage] = useState("");
+  const [expiredInfo, setExpiredInfo] = useState<{ message: string; expiryDate: string | null }>({
+    message: "",
+    expiryDate: null,
+  });
   const [batch, setBatch] = useState<BatchData | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
 
@@ -99,6 +103,9 @@ export default function VerifyPage({
 
       if (data.blocked) {
         setStage("blocked");
+      } else if (data.expired) {
+        setExpiredInfo({ message: data.message || "", expiryDate: data.expiryDate || null });
+        setStage("expired");
       } else if (data.phoneLimitExceeded) {
         setPhoneLimitMessage(data.message || "");
         setStage("phone_limit");
@@ -186,6 +193,25 @@ export default function VerifyPage({
             contact the manufacturer if you have concerns about this
             product's authenticity.
           </p>
+        </div>
+      </Centered>
+    );
+  }
+
+  if (stage === "expired") {
+    return (
+      <Centered>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+          <p className="text-red-800 font-semibold mb-1">This product has expired</p>
+          <p className="text-red-700 text-sm">
+            {expiredInfo.message ||
+              "This product has passed its expiry date and can no longer be verified."}
+          </p>
+          {expiredInfo.expiryDate && (
+            <p className="text-red-700 text-xs mt-2">
+              Valid Up To: {expiredInfo.expiryDate}
+            </p>
+          )}
         </div>
       </Centered>
     );

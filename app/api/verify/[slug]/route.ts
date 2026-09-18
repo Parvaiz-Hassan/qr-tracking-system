@@ -57,6 +57,23 @@ export async function POST(
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
+  // Expiry check (added 2026-09-18): once the batch's expiry date has
+  // passed, stop showing product details entirely and tell the customer
+  // instead. Comparing as plain "YYYY-MM-DD" strings works because that's
+  // the format the date column returns and ISO dates sort correctly as
+  // strings — no timezone conversion needed. The batch stays valid
+  // through the whole of its expiry date itself and is treated as expired
+  // starting the day after.
+  const today = new Date().toISOString().slice(0, 10);
+  if (batch.expiry_date && batch.expiry_date < today) {
+    return NextResponse.json({
+      expired: true,
+      expiryDate: batch.expiry_date,
+      message:
+        "This product has passed its expiry date and can no longer be verified. Please do not use an expired product — contact your retailer or Geneva Seeds for assistance.",
+    });
+  }
+
   // Company branding (logo/name/tagline/thank-you message) for the header/footer
   const { data: company } = await supabaseAdmin
     .from("companies")
@@ -133,6 +150,7 @@ export async function POST(
   return NextResponse.json({
     blocked: false,
     phoneLimitExceeded: false,
+    expired: false,
     batch,
     company,
     scanId: inserted.id,

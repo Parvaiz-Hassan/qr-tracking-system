@@ -15,6 +15,7 @@ type BatchRow = {
   batch_number: string;
   qr_slug: string;
   label_number: string | null;
+  expiry_date: string | null;
   scan_count: number;
   products:
     | { id: string; name: string; variety: string | null; category: string; sub_category: string | null; image_url: string | null }
@@ -27,6 +28,15 @@ type BatchRow = {
 // exists if you want it back later — see that file's comments. The
 // active restriction now is a per-phone-number limit (2 verifies per
 // phone per QR code), enforced server-side in the verify API.
+
+// Same rule as the verify API (app/api/verify/[slug]/route.ts): a batch is
+// valid through the whole of its expiry date and counts as expired only
+// from the day after.
+function isExpired(expiry_date: string | null): boolean {
+  if (!expiry_date) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  return expiry_date < today;
+}
 
 export default function AdminPage() {
   const [batches, setBatches] = useState<BatchRow[]>([]);
@@ -478,6 +488,7 @@ export default function AdminPage() {
             )}
             {batches.map((b) => {
               const product = Array.isArray(b.products) ? b.products[0] : b.products;
+              const expired = isExpired(b.expiry_date);
               return (
                 <div
                   key={b.id}
@@ -510,6 +521,11 @@ export default function AdminPage() {
                       <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600">
                         Scanned {b.scan_count} time{b.scan_count === 1 ? "" : "s"}
                       </span>
+                      {expired && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                          Expired
+                        </span>
+                      )}
                     </div>
 
                     <div className="mt-2 flex gap-2">
