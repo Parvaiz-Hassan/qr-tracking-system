@@ -59,10 +59,18 @@ export default function ScanLogPage() {
 
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
         <p className="text-sm text-neutral-500">{total} total</p>
-        <SearchBox
-          placeholder="Search name, phone or lot number..."
-          onSearch={handleSearch}
-        />
+        <div className="flex items-center gap-2 flex-wrap">
+          <SearchBox
+            placeholder="Search name, phone or lot number..."
+            onSearch={handleSearch}
+          />
+          <a
+            href={`/api/scans/export${search ? `?q=${encodeURIComponent(search)}` : ""}`}
+            className="text-sm bg-emerald-700 text-white font-medium px-3 py-2 rounded-lg hover:bg-emerald-800 whitespace-nowrap"
+          >
+            Download CSV
+          </a>
+        </div>
       </div>
 
       <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden">
