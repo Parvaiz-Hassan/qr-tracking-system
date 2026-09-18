@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Pagination from "@/components/Pagination";
+import SearchBox from "@/components/SearchBox";
+
+const PAGE_SIZE = 10;
 
 type Blocked = {
   id: string;
@@ -12,20 +16,35 @@ type Blocked = {
 
 export default function BlockedPage() {
   const [blocked, setBlocked] = useState<Blocked[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [resettingId, setResettingId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/blocked");
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(PAGE_SIZE),
+    });
+    if (search) params.set("q", search);
+    const res = await fetch(`/api/blocked?${params.toString()}`);
     const data = await res.json();
     setBlocked(data.blocked || []);
+    setTotal(data.total || 0);
     setLoading(false);
   }
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search]);
+
+  function handleSearch(q: string) {
+    setPage(1);
+    setSearch(q);
+  }
 
   async function handleReset(id: string) {
     if (!confirm("Reset this QR code's scan count and unblock it?")) return;
@@ -55,11 +74,19 @@ export default function BlockedPage() {
         <code className="mx-1 px-1 bg-amber-100 rounded">app/api/verify/[slug]/route.ts</code>.
       </div>
 
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <p className="text-sm text-neutral-500">{total} total</p>
+        <SearchBox
+          placeholder="Search product or lot number..."
+          onSearch={handleSearch}
+        />
+      </div>
+
       {loading && <p className="text-neutral-400 text-sm">Loading...</p>}
 
       {!loading && blocked.length === 0 && (
         <div className="bg-white border border-neutral-200 rounded-2xl p-6 text-center text-neutral-400 text-sm">
-          No blocked QR codes right now.
+          {search ? "No blocked QR codes match your search." : "No blocked QR codes right now."}
         </div>
       )}
 
@@ -86,6 +113,8 @@ export default function BlockedPage() {
           </div>
         ))}
       </div>
+
+      <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
     </div>
   );
 }

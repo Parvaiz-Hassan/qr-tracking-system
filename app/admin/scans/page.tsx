@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Pagination from "@/components/Pagination";
+import SearchBox from "@/components/SearchBox";
+
+const PAGE_SIZE = 15;
 
 type Scan = {
   id: string;
@@ -19,16 +23,32 @@ type Scan = {
 
 export default function ScanLogPage() {
   const [scans, setScans] = useState<Scan[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/scans")
+    setLoading(true);
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(PAGE_SIZE),
+    });
+    if (search) params.set("q", search);
+
+    fetch(`/api/scans?${params.toString()}`)
       .then((r) => r.json())
       .then((data) => {
         setScans(data.scans || []);
+        setTotal(data.total || 0);
         setLoading(false);
       });
-  }, []);
+  }, [page, search]);
+
+  function handleSearch(q: string) {
+    setPage(1);
+    setSearch(q);
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -36,6 +56,14 @@ export default function ScanLogPage() {
       <p className="text-neutral-500 text-sm mb-6">
         Every completed verification (name + phone submitted), most recent first.
       </p>
+
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <p className="text-sm text-neutral-500">{total} total</p>
+        <SearchBox
+          placeholder="Search name, phone or lot number..."
+          onSearch={handleSearch}
+        />
+      </div>
 
       <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
@@ -61,7 +89,7 @@ export default function ScanLogPage() {
             {!loading && scans.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center text-neutral-400">
-                  No scans yet.
+                  {search ? "No scans match your search." : "No scans yet."}
                 </td>
               </tr>
             )}
@@ -97,6 +125,8 @@ export default function ScanLogPage() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
     </div>
   );
 }

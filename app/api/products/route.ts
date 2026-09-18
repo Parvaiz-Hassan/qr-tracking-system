@@ -2,19 +2,49 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, DEMO_COMPANY_ID } from "@/lib/supabase";
 import { generateQrSlug } from "@/lib/slug";
 
-// GET — list all products+batches for the admin dashboard, including
-// a live scan count so the dashboard can flag batches over the limit.
-export async function GET() {
-  const { data, error } = await supabaseAdmin
+const DEFAULT_PAGE_SIZE = 10;
+
+// GET — paginated list of products+batches for the admin dashboard
+// (added 2026-09-18 so this stays usable once there are hundreds of
+// batches, instead of one giant page everyone has to scroll through),
+// including a live scan count so the dashboard can flag batches over
+// the limit.
+//
+// Query params: page (1-based, default 1), pageSize (default 10),
+// q (search text — matches product name or batch/lot number).
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+  const pageSize = Math.max(
+    1,
+    parseInt(searchParams.get("pageSize") || String(DEFAULT_PAGE_SIZE), 10) ||
+      DEFAULT_PAGE_SIZE
+  );
+  const q = (searchParams.get("q") || "").trim();
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  // `products!inner` (rather than the default left join) is required so
+  // the `.or(...)` search filter below is allowed to reference the
+  // embedded products.name column.
+  let query = supabaseAdmin
     .from("batches")
     .select(
       `id, batch_number, qr_slug, label_number, manufacturing_date, expiry_date,
        date_of_testing, net_weight, mrp, usp,
-       products ( id, name, variety, category, sub_category, uses, instructions, image_url ),
-       scan_requests ( id )`
+       products!inner ( id, name, variety, category, sub_category, uses, instructions, image_url ),
+       scan_requests ( id )`,
+      { count: "exact" }
     )
     .eq("company_id", DEMO_COMPANY_ID)
     .order("created_at", { ascending: false });
+
+  if (q) {
+    query = query.or(`batch_number.ilike.%${q}%,products.name.ilike.%${q}%`);
+  }
+
+  const { data, error, count } = await query.range(from, to);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -25,7 +55,12 @@ export async function GET() {
     scan_count: b.scan_requests?.length || 0,
   }));
 
-  return NextResponse.json({ batches: withCounts });
+  return NextResponse.json({
+    batches: withCounts,
+    total: count ?? 0,
+    page,
+    pageSize,
+  });
 }
 
 // POST — create a new product + its first batch + optional quality

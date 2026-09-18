@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CATEGORY_OPTIONS, CategoryKey } from "@/lib/categories";
+import Pagination from "@/components/Pagination";
+import SearchBox from "@/components/SearchBox";
+
+const PAGE_SIZE = 10;
 
 type QualityAttr = { label: string; value: string };
 
@@ -26,6 +30,10 @@ type BatchRow = {
 
 export default function AdminPage() {
   const [batches, setBatches] = useState<BatchRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [listLoading, setListLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -54,15 +62,31 @@ export default function AdminPage() {
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-  async function loadBatches() {
-    const res = await fetch("/api/products");
+  async function loadBatches(targetPage = page, q = search) {
+    setListLoading(true);
+    const params = new URLSearchParams({
+      page: String(targetPage),
+      pageSize: String(PAGE_SIZE),
+    });
+    if (q) params.set("q", q);
+    const res = await fetch(`/api/products?${params.toString()}`);
     const data = await res.json();
     if (data.batches) setBatches(data.batches);
+    setTotal(data.total || 0);
+    setListLoading(false);
   }
 
+  // Reload whenever the page or search term changes (search is already
+  // debounced by SearchBox before it calls setSearch/handleSearch).
   useEffect(() => {
-    loadBatches();
-  }, []);
+    loadBatches(page, search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search]);
+
+  function handleSearch(q: string) {
+    setPage(1); // reset to page 1 whenever the search term changes
+    setSearch(q);
+  }
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -143,7 +167,11 @@ export default function AdminPage() {
         setImageFile(null);
         setImagePreview("");
         setQualityAttrs([{ label: "", value: "" }]);
-        loadBatches();
+        // New batches sort first (most recent), so jump back to page 1
+        // and clear any search so the one just created is visible.
+        setSearch("");
+        if (page === 1) loadBatches(1, "");
+        else setPage(1);
       }
     } catch (err) {
       setError("Network error — check your Supabase setup in .env.local");
@@ -430,12 +458,22 @@ export default function AdminPage() {
 
           {/* List */}
           <div className="space-y-4">
-            <h2 className="font-medium text-neutral-900">
-              Batches ({batches.length})
-            </h2>
-            {batches.length === 0 && (
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h2 className="font-medium text-neutral-900">Batches ({total})</h2>
+              <SearchBox
+                placeholder="Search product or lot number..."
+                onSearch={handleSearch}
+              />
+            </div>
+
+            {listLoading && (
+              <p className="text-neutral-400 text-sm">Loading...</p>
+            )}
+            {!listLoading && batches.length === 0 && (
               <p className="text-neutral-400 text-sm">
-                No batches yet — add one on the left.
+                {search
+                  ? "No batches match your search."
+                  : "No batches yet — add one on the left."}
               </p>
             )}
             {batches.map((b) => {
@@ -500,6 +538,13 @@ export default function AdminPage() {
                 </div>
               );
             })}
+
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              onPageChange={setPage}
+            />
           </div>
         </div>
       </div>
