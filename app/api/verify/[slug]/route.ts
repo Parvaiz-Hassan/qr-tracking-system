@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const SCAN_LIMIT = 3; // 4th+ verify attempt for the same batch gets blocked
+const SCAN_LIMIT = 3; // 4th+ verify attempt for the same batch gets blocked (when ENFORCE_SCAN_LIMIT is true)
+
+// Client asked (2026-09-18) to remove the scan-limit block for now, with
+// the intent to re-enable it later. Flip this back to `true` to restore
+// blocking on the customer-facing verify page — nothing else needs to
+// change. Scan counting, the /api/blocked endpoint, and the admin
+// "Blocked QR Codes" page all keep working exactly as before regardless
+// of this flag: they still compute counts and list batches over
+// SCAN_LIMIT, this flag only controls whether a real customer actually
+// gets stopped from seeing product details on /p/[slug].
+const ENFORCE_SCAN_LIMIT = false;
 
 export async function POST(
   req: NextRequest,
@@ -51,7 +61,10 @@ export async function POST(
     return NextResponse.json({ error: countError.message }, { status: 500 });
   }
 
-  if ((count ?? 0) >= SCAN_LIMIT) {
+  // Blocking is currently disabled per client request (see ENFORCE_SCAN_LIMIT
+  // above) — the count is still tracked and returned either way, so nothing
+  // downstream (admin dashboard, Blocked QR Codes page) loses data.
+  if (ENFORCE_SCAN_LIMIT && (count ?? 0) >= SCAN_LIMIT) {
     return NextResponse.json({ blocked: true, scanCount: count });
   }
 

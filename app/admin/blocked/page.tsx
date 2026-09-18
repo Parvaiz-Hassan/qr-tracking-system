@@ -38,11 +38,20 @@ export default function BlockedPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-semibold text-neutral-900 mb-1">Blocked QR Codes</h1>
-      <p className="text-neutral-500 text-sm mb-6">
-        These QR codes have been scanned more than 3 times and no longer show
-        product details to customers. Reset a code if the block was a false
-        positive.
+      <p className="text-neutral-500 text-sm mb-3">
+        QR codes that have been scanned more than 3 times. Reset a code if
+        the block was a false positive.
       </p>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-amber-800 text-xs mb-6">
+        Blocking is currently <strong>OFF</strong> per client request — these
+        QR codes are only listed here for visibility. Customers can still
+        see full product details on all of them, even the ones below. Flip
+        <code className="mx-1 px-1 bg-amber-100 rounded">ENFORCE_SCAN_LIMIT</code>
+        back to <code className="px-1 bg-amber-100 rounded">true</code> in
+        <code className="mx-1 px-1 bg-amber-100 rounded">app/api/verify/[slug]/route.ts</code>
+        to turn blocking back on.
+      </div>
 
       {loading && <p className="text-neutral-400 text-sm">Loading...</p>}
 
