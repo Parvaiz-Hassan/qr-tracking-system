@@ -18,6 +18,10 @@ type BatchRow = {
 };
 
 const SCAN_LIMIT = 3;
+// Mirrors ENFORCE_SCAN_LIMIT in app/api/verify/[slug]/route.ts — keep
+// these two in sync. When false, customers are NOT actually blocked
+// even past SCAN_LIMIT; this badge is informational only in that case.
+const ENFORCE_SCAN_LIMIT = false;
 
 export default function AdminPage() {
   const [batches, setBatches] = useState<BatchRow[]>([]);
@@ -468,12 +472,18 @@ export default function AdminPage() {
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
                           overLimit
-                            ? "bg-red-100 text-red-700"
+                            ? ENFORCE_SCAN_LIMIT
+                              ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700"
                             : "bg-neutral-100 text-neutral-600"
                         }`}
                       >
                         Scanned {b.scan_count} time{b.scan_count === 1 ? "" : "s"}
-                        {overLimit ? " — blocked" : ""}
+                        {overLimit
+                          ? ENFORCE_SCAN_LIMIT
+                            ? " — blocked"
+                            : " — over limit (not blocked)"
+                          : ""}
                       </span>
                     </div>
 
