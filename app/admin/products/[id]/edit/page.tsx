@@ -119,7 +119,7 @@ export default function EditBatchPage({
         onSubmit={handleSave}
         className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4"
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-neutral-500">Crop / Product Name *</label>
             <input
@@ -139,7 +139,7 @@ export default function EditBatchPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-neutral-500">Category</label>
             <select
@@ -177,7 +177,7 @@ export default function EditBatchPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-neutral-500">Lot / Batch No. *</label>
             <input
@@ -233,7 +233,7 @@ export default function EditBatchPage({
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="text-xs text-neutral-500">Date of Testing</label>
             <input
@@ -263,7 +263,7 @@ export default function EditBatchPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="text-xs text-neutral-500">Net Weight</label>
             <input

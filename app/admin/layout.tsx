@@ -29,9 +29,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-neutral-50">
+      {/* Fixed 2026-09-19: this row used a plain `flex` nav with no wrap
+          and no scroll, so on a phone-width screen the 5 nav items plus
+          Log out button simply overflowed/squeezed the header, which
+          cascaded into everything below it looking broken too. Now the
+          nav scrolls horizontally on narrow screens (own scroll area,
+          doesn't affect the page) while Log out stays pinned and always
+          visible. */}
       <header className="bg-white border-b border-neutral-200">
-        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
-          <nav className="flex gap-1">
+        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14 gap-2">
+          <nav className="flex gap-1 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {navItems.map((item) => {
               const active =
                 item.href === "/admin"
@@ -41,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`text-sm px-3 py-1.5 rounded-lg ${
+                  className={`text-sm px-3 py-1.5 rounded-lg flex-shrink-0 ${
                     active
                       ? "bg-emerald-50 text-emerald-800 font-medium"
                       : "text-neutral-500 hover:text-neutral-800"
@@ -54,7 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
           <button
             onClick={handleLogout}
-            className="text-xs text-neutral-400 hover:text-red-500"
+            className="text-xs text-neutral-400 hover:text-red-500 flex-shrink-0"
           >
             Log out
           </button>

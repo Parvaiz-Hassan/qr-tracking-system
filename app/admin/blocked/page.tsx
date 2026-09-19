@@ -94,10 +94,10 @@ export default function BlockedPage() {
         {blocked.map((b) => (
           <div
             key={b.id}
-            className="bg-white border border-amber-200 rounded-2xl p-4 flex items-center justify-between"
+            className="bg-white border border-amber-200 rounded-2xl p-4 flex items-center justify-between flex-wrap gap-3"
           >
-            <div>
-              <p className="font-medium text-neutral-900">{b.product_name}</p>
+            <div className="min-w-0">
+              <p className="font-medium text-neutral-900 break-words">{b.product_name}</p>
               <p className="text-neutral-500 text-xs">{b.batch_number}</p>
               <p className="text-amber-700 text-xs mt-1">
                 Scanned {b.scan_count} times
@@ -106,7 +106,7 @@ export default function BlockedPage() {
             <button
               onClick={() => handleReset(b.id)}
               disabled={resettingId === b.id}
-              className="text-sm bg-neutral-100 hover:bg-neutral-200 px-3 py-1.5 rounded-lg disabled:opacity-50"
+              className="text-sm bg-neutral-100 hover:bg-neutral-200 px-3 py-1.5 rounded-lg disabled:opacity-50 flex-shrink-0"
             >
               {resettingId === b.id ? "Resetting..." : "Reset & Unblock"}
             </button>

@@ -73,8 +73,13 @@ export default function ScanLogPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
+      {/* Fixed 2026-09-19: a 7-column table with no scroll wrapper forced
+          the whole page wider than the phone screen on mobile (the
+          classic "site is messed up on mobile" symptom). overflow-x-auto
+          here lets just the table scroll sideways within its own box;
+          the rest of the page stays normal width. */}
+      <div className="bg-white border border-neutral-200 rounded-2xl overflow-x-auto">
+        <table className="w-full text-sm min-w-[720px]">
           <thead>
             <tr className="bg-neutral-50 text-neutral-500 text-xs uppercase text-left">
               <th className="px-4 py-2.5">Product</th>

@@ -261,7 +261,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-neutral-500">Crop / Product Name *</label>
                 <input
@@ -283,7 +283,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-neutral-500">Category</label>
                 <select
@@ -321,7 +321,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-neutral-500">Lot / Batch No. *</label>
                 <input
@@ -381,7 +381,7 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs text-neutral-500">Date of Testing</label>
                 <input
@@ -411,7 +411,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs text-neutral-500">Net Weight</label>
                 <input
@@ -502,12 +502,12 @@ export default function AdminPage() {
               return (
                 <div
                   key={b.id}
-                  className="bg-white border border-neutral-200 rounded-2xl p-5 flex gap-4"
+                  className="bg-white border border-neutral-200 rounded-2xl p-5 flex flex-col sm:flex-row gap-4"
                 >
                   <img
                     src={qrImageUrl(b.qr_slug)}
                     alt="QR code"
-                    className="w-24 h-24 rounded-lg border border-neutral-100"
+                    className="w-24 h-24 rounded-lg border border-neutral-100 flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -538,7 +538,7 @@ export default function AdminPage() {
                       )}
                     </div>
 
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       <a
                         href={qrPrintUrl(b.qr_slug) + "&format=png"}
                         target="_blank"
