@@ -16,18 +16,34 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const supabase = supabaseBrowser();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // Added 2026-09-19: this call had no try/catch, so any thrown error
+    // (a flaky mobile connection, or third-party storage/cookies blocked —
+    // common inside an in-app browser like WhatsApp/Instagram's built-in
+    // webview, which Supabase auth's session storage needs) went
+    // completely unhandled. The button would just sit disabled in
+    // "Signing in..." forever with no error shown — exactly "I click and
+    // nothing happens." Now it always resolves to either a real error
+    // message or a successful redirect.
+    try {
+      const supabase = supabaseBrowser();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-    setLoading(false);
+      if (error) {
+        setError(error.message);
+        return;
+      }
 
-    if (error) {
-      setError(error.message);
-      return;
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setError(
+        "Couldn't sign in — check your internet connection. If you're inside " +
+          "an app's built-in browser (e.g. opened via WhatsApp), try opening " +
+          "this link in Chrome or Safari directly instead."
+      );
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/admin");
-    router.refresh();
   }
 
   return (
