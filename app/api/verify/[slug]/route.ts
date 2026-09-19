@@ -77,7 +77,9 @@ export async function POST(
   // Company branding (logo/name/tagline/thank-you message) for the header/footer
   const { data: company } = await supabaseAdmin
     .from("companies")
-    .select("name, logo_url, tagline, thank_you_message")
+    .select(
+      "name, logo_url, tagline, thank_you_message, produced_by_name, produced_by_subtitle, produced_by_address"
+    )
     .eq("id", batch.company_id)
     .single();
 

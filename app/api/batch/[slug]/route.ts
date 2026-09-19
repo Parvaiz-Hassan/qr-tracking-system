@@ -29,7 +29,9 @@ export async function GET(
 
   const { data: company } = await supabaseAdmin
     .from("companies")
-    .select("name, logo_url, tagline, thank_you_message")
+    .select(
+      "name, logo_url, tagline, thank_you_message, produced_by_name, produced_by_subtitle, produced_by_address"
+    )
     .eq("id", data.company_id)
     .single();
 

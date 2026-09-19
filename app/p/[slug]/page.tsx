@@ -9,6 +9,9 @@ type Company = {
   logo_url: string | null;
   tagline: string | null;
   thank_you_message: string | null;
+  produced_by_name: string | null;
+  produced_by_subtitle: string | null;
+  produced_by_address: string | null;
 };
 
 type BatchData = {
@@ -375,18 +378,6 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
           </Section>
         )}
 
-        {/* Authenticity status */}
-        <div className="bg-white border border-neutral-200 rounded-2xl p-4 mt-3">
-          <p className="text-emerald-800 font-medium text-sm mb-2.5 flex items-center gap-2">
-            <ShieldCheckIcon /> Authenticity Status
-          </p>
-          <div className="bg-emerald-50 rounded-xl px-4 py-2.5 flex justify-center">
-            <p className="text-emerald-800 text-xs font-medium whitespace-nowrap overflow-x-auto text-center">
-              QR verified &bull; Lot traceable &bull; QC record available
-            </p>
-          </div>
-        </div>
-
         {companyName && (
           <p className="text-neutral-400 text-xs text-center mt-3 px-4">
             ⓘ Scan result linked to {companyName} production and quality
@@ -402,12 +393,27 @@ function ResultScreen({ batch, company }: { batch: BatchData; company: Company |
           <BenefitIcon icon={<PeopleIcon />} label="Farmer Prosperity" />
         </div>
 
-        {company?.thank_you_message && (
-          <div className="flex flex-col items-center mt-4 px-4">
-            <img src="/geneva-leaf-mark.png" alt="" className="w-6 h-6 object-contain" />
-            <p className="text-neutral-500 text-xs text-center mt-1.5 leading-relaxed">
-              {company.thank_you_message}
-            </p>
+        {/* Produced By footer (replaces the old "Thank you" box —
+            added 2026-09-19, matches the product label's produced/
+            packed/marketed-by block, edited from Admin → Settings) */}
+        {(company?.produced_by_name || company?.produced_by_address) && (
+          <div className="text-center mt-4 px-4 pb-2">
+            {company?.produced_by_name && (
+              <p className="text-neutral-400 text-[11px]">Produced, Packed &amp; Marketed by:</p>
+            )}
+            {company?.produced_by_name && (
+              <p className="text-neutral-700 text-xs font-semibold mt-0.5">
+                {company.produced_by_name}
+              </p>
+            )}
+            {company?.produced_by_subtitle && (
+              <p className="text-neutral-500 text-xs mt-0.5">{company.produced_by_subtitle}</p>
+            )}
+            {company?.produced_by_address && (
+              <p className="text-neutral-400 text-[11px] mt-1 leading-relaxed whitespace-pre-line">
+                {company.produced_by_address}
+              </p>
+            )}
           </div>
         )}
       </div>

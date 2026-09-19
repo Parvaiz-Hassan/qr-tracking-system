@@ -12,6 +12,9 @@ export default function SettingsPage() {
     logo_url: "",
     tagline: "",
     thank_you_message: "",
+    produced_by_name: "",
+    produced_by_subtitle: "",
+    produced_by_address: "",
   });
 
   useEffect(() => {
@@ -24,6 +27,9 @@ export default function SettingsPage() {
             logo_url: data.company.logo_url || "",
             tagline: data.company.tagline || "",
             thank_you_message: data.company.thank_you_message || "",
+            produced_by_name: data.company.produced_by_name || "",
+            produced_by_subtitle: data.company.produced_by_subtitle || "",
+            produced_by_address: data.company.produced_by_address || "",
           });
         }
         setLoading(false);
@@ -78,6 +84,11 @@ export default function SettingsPage() {
             <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm" />
           </div>
           {uploading && <p className="text-xs text-neutral-400 mt-1">Uploading...</p>}
+          <p className="text-xs text-neutral-400 mt-1">
+            If a previously-uploaded logo looks darker or off-color on the
+            verify page, re-upload it here — uploads are now automatically
+            corrected to standard web colors.
+          </p>
         </div>
 
         <div>
@@ -100,15 +111,49 @@ export default function SettingsPage() {
           />
         </div>
 
-        <div>
-          <label className="text-xs text-neutral-500">Thank You Message (shown at the bottom)</label>
-          <textarea
-            className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
-            rows={2}
-            value={form.thank_you_message}
-            onChange={(e) => setForm({ ...form, thank_you_message: e.target.value })}
-            placeholder="Thank you for choosing Geneva Seeds. Together for a Greener, Healthier and Prosperous Tomorrow."
-          />
+        <div className="border-t border-neutral-100 pt-4">
+          <p className="text-sm font-medium text-neutral-900 mb-1">
+            Produced By (shown at the bottom of the verify page)
+          </p>
+          <p className="text-xs text-neutral-400 mb-3">
+            Replaces the old &quot;Thank you&quot; message with a proper
+            produced/packed/marketed-by block, e.g. matching your product
+            label.
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-neutral-500">Company Legal Name</label>
+              <input
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
+                value={form.produced_by_name}
+                onChange={(e) => setForm({ ...form, produced_by_name: e.target.value })}
+                placeholder="JP AGRO INNOVATIONS PVT. LTD."
+              />
+            </div>
+            <div>
+              <label className="text-xs text-neutral-500">Subtitle</label>
+              <input
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
+                value={form.produced_by_subtitle}
+                onChange={(e) => setForm({ ...form, produced_by_subtitle: e.target.value })}
+                placeholder="Centre of Excellence – Seed Operations"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-neutral-500">Address</label>
+              <textarea
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
+                rows={2}
+                value={form.produced_by_address}
+                onChange={(e) => setForm({ ...form, produced_by_address: e.target.value })}
+                placeholder={"4/131-3 RN Colony, Athveli, Medchal,\nSecunderabad, Telangana – 501 401"}
+              />
+              <p className="text-xs text-neutral-400 mt-1">
+                Use a new line to control where the address wraps.
+              </p>
+            </div>
+          </div>
         </div>
 
         {saved && <p className="text-emerald-600 text-sm">Saved.</p>}
