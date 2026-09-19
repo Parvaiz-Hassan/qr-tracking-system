@@ -70,7 +70,17 @@ export default function AdminPage() {
     usp: "",
   });
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  // QR codes should always point at the branded domain (e.g.
+  // verify.jpindogroup.com), never whatever host the admin panel happens
+  // to be opened from (which could be the vercel.app URL). Set
+  // NEXT_PUBLIC_SITE_URL in your environment variables to your real
+  // domain once you have one connected — added 2026-09-19, before that
+  // this fell back to window.location.origin, which meant a batch's
+  // printed QR code depended on which URL you were logged into admin
+  // from at the moment you generated it.
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
 
   async function loadBatches(targetPage = page, q = search) {
     setListLoading(true);
