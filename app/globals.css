@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
+/* This entire app (admin dashboard + customer verify page) is designed
+   as a light-only UI — white cards, dark text, no dark-mode variants
+   anywhere in the Tailwind classes. The Next.js starter template this
+   was scaffolded from included a `prefers-color-scheme: dark` override
+   that flipped --foreground to a near-white color whenever a visitor's
+   phone/browser was in dark mode. Since none of the actual page markup
+   has dark-mode styling, that left body text (and un-styled form inputs,
+   which inherit color from body) rendering near-white on the white card
+   backgrounds — invisible text while typing. Removed 2026-09-19: this
+   was the cause of the "text looks white while typing name/phone"
+   report on the verify page. `color-scheme: light` below additionally
+   tells the browser (including Android Chrome's "force dark" auto-theme
+   feature) not to try to dark-theme this page at all. */
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -10,13 +24,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

@@ -257,7 +257,7 @@ export default function VerifyPage({
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1 bg-white text-neutral-900"
               placeholder="Full name"
             />
           </div>
@@ -270,7 +270,7 @@ export default function VerifyPage({
               maxLength={13}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1"
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm mt-1 bg-white text-neutral-900"
               placeholder="10-digit mobile number"
             />
           </div>
