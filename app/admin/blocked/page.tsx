@@ -67,11 +67,14 @@ export default function BlockedPage() {
         client request — these QR codes are listed here for visibility
         only. Product details still show regardless of total scan count.
         A separate, active restriction now limits each individual mobile
-        number to 2 verifications per QR code (see the Scan Log to check
-        this). To turn this overall block back on, flip
+        number to 1 verification per QR code (see the Scan Log to check
+        this — change <code className="mx-1 px-1 bg-amber-100 rounded">PER_PHONE_LIMIT</code>
+        in <code className="mx-1 px-1 bg-amber-100 rounded">app/api/verify/[slug]/route.ts</code>
+        if you ever want a different number). To turn this overall block
+        back on, flip
         <code className="mx-1 px-1 bg-amber-100 rounded">ENFORCE_SCAN_LIMIT</code>
-        to <code className="px-1 bg-amber-100 rounded">true</code> in
-        <code className="mx-1 px-1 bg-amber-100 rounded">app/api/verify/[slug]/route.ts</code>.
+        to <code className="px-1 bg-amber-100 rounded">true</code> in the
+        same file.
       </div>
 
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4">

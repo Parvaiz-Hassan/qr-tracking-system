@@ -10,12 +10,14 @@ const SCAN_LIMIT = 3; // legacy global per-QR limit (see ENFORCE_SCAN_LIMIT belo
 // restriction. Both can coexist if you ever want both rules at once.
 const ENFORCE_SCAN_LIMIT = false;
 
-// New restriction (added 2026-09-18): a single phone number can verify
-// the SAME QR code at most this many times. This is what actually stops
-// one farmer from burning through a code by himself — the old global
-// counter didn't distinguish who was scanning, so one person re-scanning
-// could "use up" the limit for everyone else.
-const PER_PHONE_LIMIT = 2;
+// New restriction (added 2026-09-18, tightened to 1 on 2026-09-19 per
+// client request): a single phone number can verify the SAME QR code at
+// most this many times. This is what actually stops one farmer from
+// burning through a code by himself — the old global counter didn't
+// distinguish who was scanning, so one person re-scanning could "use up"
+// the limit for everyone else. Change this number if the limit ever
+// needs to be something other than one-time-only.
+const PER_PHONE_LIMIT = 1;
 
 export async function POST(
   req: NextRequest,
@@ -113,7 +115,9 @@ export async function POST(
     return NextResponse.json({
       phoneLimitExceeded: true,
       message:
-        "You've already verified this product the maximum number of times from this mobile number. Please try scanning again using a different mobile number.",
+        PER_PHONE_LIMIT === 1
+          ? "This product has already been verified from this mobile number. Each QR code can only be verified once per mobile number — please try scanning again using a different mobile number."
+          : "You've already verified this product the maximum number of times from this mobile number. Please try scanning again using a different mobile number.",
     });
   }
 

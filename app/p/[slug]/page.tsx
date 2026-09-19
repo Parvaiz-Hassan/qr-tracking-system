@@ -229,7 +229,7 @@ export default function VerifyPage({
           </p>
           <p className="text-amber-700 text-sm">
             {phoneLimitMessage ||
-              "You've already verified this product the maximum number of times from this mobile number. Please try again using a different mobile number."}
+              "This product has already been verified from this mobile number. Please try again using a different mobile number."}
           </p>
         </div>
       </Centered>
