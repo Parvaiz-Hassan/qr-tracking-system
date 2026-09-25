@@ -108,12 +108,69 @@ export default function AdminPage() {
     setSearch(q);
   }
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+  // Vercel's serverless functions reject any request body over ~4.5MB
+  // (a platform limit, not something next.config can raise) — before this
+  // was added, a normal phone-camera photo (often 3-10MB) would blow past
+  // that limit on the live site. That crashes /api/upload at the platform
+  // level before our code even runs, so the response isn't JSON, and the
+  // form's fetch throws a parse error that lands in the generic "Network
+  // error — check your Supabase setup" catch block, which is misleading —
+  // Supabase was never the problem. Fixed here (2026-09-25) by shrinking
+  // every image client-side (max 1600px on the long edge, JPEG quality
+  // 0.82) before it's ever sent, so this can't happen regardless of what
+  // camera or phone the photo came from. The server still re-normalizes
+  // color space with sharp on top of this.
+  async function compressImage(file: File): Promise<File> {
+    const MAX_DIMENSION = 1600;
+    const QUALITY = 0.82;
+
+    // Skip already-small files and non-image types — nothing to gain.
+    if (!file.type.startsWith("image/") || file.size < 700_000) return file;
+
+    try {
+      const bitmap = await createImageBitmap(file);
+      let { width, height } = bitmap;
+
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height / width) * MAX_DIMENSION);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width / height) * MAX_DIMENSION);
+          height = MAX_DIMENSION;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(bitmap, 0, 0, width, height);
+
+      const blob: Blob | null = await new Promise((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", QUALITY)
+      );
+      if (!blob) return file;
+
+      // Only use the compressed version if it's actually smaller.
+      if (blob.size >= file.size) return file;
+
+      const newName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+      return new File([blob], newName, { type: "image/jpeg" });
+    } catch {
+      // If the browser can't decode it (unsupported format, etc.), fall
+      // back to uploading the original untouched rather than blocking.
+      return file;
     }
+  }
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImagePreview(URL.createObjectURL(file));
+    const compressed = await compressImage(file);
+    setImageFile(compressed);
   }
 
   function updateAttr(i: number, field: "label" | "value", val: string) {
@@ -194,7 +251,12 @@ export default function AdminPage() {
         else setPage(1);
       }
     } catch (err) {
-      setError("Network error — check your Supabase setup in .env.local");
+      setError(
+        "Something went wrong creating this batch (network issue or the " +
+          "image upload failed unexpectedly). Please try again — if it " +
+          "keeps happening, check the Vercel function logs for /api/upload " +
+          "or /api/products."
+      );
     } finally {
       setLoading(false);
     }
