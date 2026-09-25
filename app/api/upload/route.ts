@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import sharp from "sharp";
+// sharp is a native binary module. It was previously imported statically
+// at the top of this file — if its prebuilt binary fails to load in
+// Vercel's serverless runtime (a known sharp/Vercel gotcha, e.g. after a
+// dependency or lockfile change), that import throws at MODULE LOAD TIME,
+// before POST() even runs. The try/catch below only ever wrapped how
+// sharp is *used*, not the import itself, so that crash was unhandled and
+// took the whole function down — producing Next's generic HTML 500 crash
+// page instead of a normal JSON error, which is what showed up client-side
+// as a JSON-parse failure in the batch form. Fixed (2026-09-25) by loading
+// sharp lazily inside the try block, so a failed load is now caught the
+// same way a failed parse always was, and falls back to the original file.
 
 // Uploaded images (logos especially) sometimes come out of a print/design
 // tool with a CMYK color profile or a non-sRGB embedded profile. Browsers
@@ -25,6 +35,7 @@ export async function POST(req: NextRequest) {
   let outputContentType = file.type || "application/octet-stream";
 
   try {
+    const sharp = (await import("sharp")).default;
     const image = sharp(Buffer.from(arrayBuffer)).toColorspace("srgb");
 
     if (originalExt === "png") {
